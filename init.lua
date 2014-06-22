@@ -11,26 +11,28 @@ local computer_action = function(pos, formname, fields, sender)
 	computers.execute_oscommand(fields.text, pos, sender)
 end
 
-computers.registered_oscommands = {}
-computers.computer_help = {}
+computers.registered_command_names = {}
+computers.registered_commands = {}
 
-computers.register_oscommand = function(name, exe, help)
-	computers.registered_oscommands[name] = exe
-	computers.computer_help[name] = help
+computers.register_oscommand = function(name, short_description, long_description, exe)
+	computers.registered_command_names[#computers.registered_command_names+1] = name
+	computers.registered_commands[name] = {short_description=short_description, long_description=long_description, exe=exe}
 end
 
 computers.execute_oscommand = function(cmdline, pos, player)
 	if cmdline == nil then return end
 	local command = string.match(cmdline, "([^ ]+) *")
 	if command == nil then return end
-	local message = "["..command.." : command not found]"
+	local message = command..": command not found"
 	local continue = false
 	
 	print("pass command to computer : "..command)
-	local func = computers.registered_oscommands[command]
-	if func then
-		continue = true
-		message, continue = func(cmdline, pos, player)
+	if computers.registered_commands[command] then
+		local func = computers.registered_commands[command].exe
+		if func then
+			continue = true
+			message, continue = func(cmdline, pos, player)
+		end
 	end
 	
 	--minetest.chat_send_player(player:get_player_name(), message)

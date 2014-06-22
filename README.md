@@ -6,4 +6,4 @@ This minetest mod allow you to craft realistics laptop and screens. Both are ani
 Install
 =======
 
-As other minetest mods, just extract it in minetest/games/minetest_game/mods directory.
+As other minetest mods, just extract it in minetest/games/minetest_game/mods directory and rename the new folder "computers".
