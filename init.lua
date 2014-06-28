@@ -1,12 +1,15 @@
 -- This code is distributed under GN GPL v2 license. Copyright© Jimy-Byerley
 
-local welcome_message = "/* welcome to cybertronic OS v2.0 */"
-local default_laptop = "computers:laptop_open"
+local opened_laptop = "computers:laptop_open"
+local closed_laptop = "computers:laptop_close"
+local connected_laptop = "computers:laptop_connect"
+
+local welcome_message = "/* welcome to cybertronic OS v2.2 */"
+local default_laptop = opened_laptop
 
 computers = {}
 
 local computer_action = function(pos, formname, fields, sender)
-	local node = minetest.env:get_node(pos)
 	--use shell
 	computers.execute_oscommand(fields.text, pos, sender)
 end
@@ -15,8 +18,14 @@ computers.registered_command_names = {}
 computers.registered_commands = {}
 
 computers.register_oscommand = function(name, short_description, long_description, exe)
-	computers.registered_command_names[#computers.registered_command_names+1] = name
-	computers.registered_commands[name] = {short_description=short_description, long_description=long_description, exe=exe}
+	if computers.registered_commands[name] == nil then
+		computers.registered_command_names[#computers.registered_command_names+1] = name
+	end
+	computers.registered_commands[name] = {
+		short_description=short_description, 
+		long_description=long_description, 
+		exe=exe
+	}
 end
 
 computers.execute_oscommand = function(cmdline, pos, player)
@@ -58,7 +67,7 @@ minetest.register_craft({
 })
 
 minetest.register_craft({
-	output = 'computers:laptop_close',
+	output = default_laptop,
 	recipe = {
 		{'technology:flat_screen_off', "technology:wire"},
 		{'technology:electronic_card', "technology:wire"},
@@ -91,10 +100,7 @@ minetest.register_node("computers:laptop_open", {
 	light_source = 4,
     paramtype2 = "facedir",
     drawtype = "nodebox",
-    node_box = {type = "fixed", fixed = {
-    	--{-0.45, -0.40, 0.30,   0.45, 0.30, 0.25},
-    	--{-0.45, -0.5,  -0.45, 0.45, -0.425, 0.25},
-    	
+    node_box = {type = "fixed", fixed = {    	
     	-- top part
     	{-0.3, -0.45, 0.05,   0.3, 0.05, 0.1},
     	-- bottom part
@@ -173,12 +179,24 @@ minetest.register_node("computers:laptop_connect", {
 	light_source = 6,
     paramtype2 = "facedir",
     drawtype = "nodebox",
-    node_box = {type = "fixed", fixed = {
-    	{-0.45, -0.40, 0.30,   0.45, 0.30, 0.25},
-    	{-0.45, -0.5,  -0.45, 0.45, -0.425, 0.25},
+    node_box = {type = "fixed", fixed = {    	
+    	-- top part
+    	{-0.3, -0.45, 0.05,   0.3, 0.05, 0.1},
+    	-- bottom part
+    	{-0.3, -0.5, -0.45,     0.3, -0.45, 0.075},
     }},
-    selection_box = {type = "fixed", fixed = {-0.45, -0.40, 0.30,   0.45, 0.30, 0.25}},
-    tiles = {"laptop_top.png", "laptop_bottom.png", "laptop_left.png", "laptop_right.png", "laptop_back.png", "laptop_front_connect.png"},
+    selection_box = {type = "fixed", fixed = {
+    	-- top part
+    	{-0.3, -0.45, 0.05,   0.3, 0.05, 0.1},
+    	-- bottom part
+    	{-0.3, -0.5, -0.45,     0.3, -0.45, 0.075},
+    }},
+    tiles = {"laptop_top.png", "laptop_bottom.png", "laptop_left.png", "laptop_right.png", "laptop_back.png", {
+			image="laptop_front_connect.png",
+			backface_culling=false,
+			animation={type="vertical_frames", aspect_w=128, aspect_h=128, length=4.5}
+		}
+	},
     walkable = true,
     groups = {choppy=2, dig_immediate=2, not_in_creative_inventory=1},
 	drop = default_laptop,
@@ -187,70 +205,8 @@ minetest.register_node("computers:laptop_connect", {
     	node.name = "computers:laptop_close"
     	minetest.env:set_node(pos, node)
     end,
-    on_receive_fields = function(pos, formname, fields, sender)
-		--get remote coordinates
-		local meta = minetest.env:get_meta(pos)
-		local remote_pos = {}
-		remote_pos.x, remote_pos.y, remote_pos.z = string.match(meta:get_string("destination"), "^([%d.-]+)[, ] *([%d.-]+)[, ] *([%d.-]+)$")
-		
-		local self = minetest.env:get_node(pos)
-		local node = minetest.env:get_node(remote_pos)
-		
-    	if fields.text == "disconnect" then
-			--change local
-			if math.random(1,2) == 1 then
-				self.name = "computers:laptop_smalltext"
-			else
-				self.name = "computers:laptop_bigtext"
-			end
-			minetest.env:set_node(pos, self)
-			--set local metadata
-			meta:set_string("formspec", "field[text;;${text}]")
-			meta:set_string("infotext", "")
-			
-			--change remote text
-			if math.random(1,2) == 1 then
-				node.name = "computers:laptop_smalltext"
-			else
-				node.name = "computers:laptop_bigtext"
-			end
-			minetest.env:set_node(remote_pos, node)
-			--set remote metadata
-			local meta = minetest.env:get_meta(remote_pos)
-			meta:set_string("formspec", "field[text;;${text}]")
-			meta:set_string("infotext", "")
-		else
-			
-			--verify host activity
-			if node.name ~= "computers:laptop_connect" then
-				minetest.chat_send_player(sender:get_player_name(), "[connection failed]")
-				--change text
-				if math.random(1,2) == 1 then
-					self.name = "computers:laptop_smalltext"
-				else
-					self.name = "computers:laptop_bigtext"
-				end
-				minetest.env:set_node(pos, self)
-				--set metadata
-				meta:set_string("formspec", "field[text;;${text}]")
-				meta:set_string("infotext", "")
-			end
-			
-			if remote_pos.x and remote_pos.y and remote_pos.z then
-				print(sender:get_player_name().." send packet to "..remote_pos.x..","..remote_pos.y..","..remote_pos.z)
-				--transfer message
-				local recievers = minetest.env:get_objects_inside_radius(remote_pos, 3)
-				local i=1
-				while recievers[i] ~= nil do
-					local name = recievers[i]:get_player_name()
-					minetest.chat_send_player(name, "["..fields.text.."]")
-					i = i+1
-				end
-			else
-				minetest.chat_send_player(sender:get_player_name(), "[bad address]")
-			end
-		end
-   	end,
+    
+    on_receive_fields = computers.oscommand_com_main
 })
 
-minetest.register_alias("computers:laptop", "computers:laptop_close")
+minetest.register_alias("computers:laptop", "computers:laptop_open")
