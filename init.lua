@@ -35,7 +35,8 @@ computers.execute_oscommand = function(cmdline, pos, player)
 	local message = command..": command not found"
 	local continue = false
 	
-	print("pass command to computer : "..command)
+	--DEBUG info:
+	--print("pass command to computer : "..command)
 	if computers.registered_commands[command] then
 		local func = computers.registered_commands[command].exe
 		if func then

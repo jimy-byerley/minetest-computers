@@ -170,12 +170,12 @@ end)
 -- funtion called when a "computers:laptop_connect" receive a field
 computers.oscommand_com_main = function(pos, formname, fields, sender)
 	--get remote coordinates
-	local meta = minetest.env:get_meta(pos)
+	local meta = minetest.get_meta(pos)
 	local remote_pos = {}
 	remote_pos.x, remote_pos.y, remote_pos.z = string.match(meta:get_string("destination"), "^([%d.-]+)[, ] *([%d.-]+)[, ] *([%d.-]+)$")
 	
-	local self = minetest.env:get_node(pos)
-	local node = minetest.env:get_node(remote_pos)
+	local self = minetest.get_node(pos)
+	local node = minetest.get_node(remote_pos)
 	
 	if fields.text == nil then
 		return
@@ -195,7 +195,7 @@ computers.oscommand_com_main = function(pos, formname, fields, sender)
 		minetest.add_node(remote_pos, node)
 		
 		--set remote metadata
-		meta = minetest.env:get_meta(remote_pos)
+		meta = minetest.get_meta(remote_pos)
 		meta:set_string("formspec", "field[text;;${text}]")
 		meta:set_string("infotext", "END OF LINE\n* * * connection closed by remote host\n\n"..welcome_message)
 	else
@@ -236,3 +236,21 @@ function (cmdline, pos, player)
 	print("[computers]: all computers restarted")
 	return welcome_message, true
 end)
+
+
+
+if technology ~= nil then
+	computers.register_oscommand("design", "generates a plan for the asked machine", "design [machin name]",
+		function (cmdline, pos, player)
+			local command, asked_name = string.match(cmdline, "^([^ ]+) *([^ ]+)")
+			
+			local plan = technology.registered_plans[asked_name]
+			if plan then
+				local inventory = player:get_inventory()
+				inventory:add_item("main", plan[1])
+				return asked_name.." successfully computed.", true
+			else
+				return asked_name..": file not found.", false
+			end
+		end)
+end
